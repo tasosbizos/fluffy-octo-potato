@@ -12,8 +12,6 @@ permissions:
 jobs:
   export-sdk:
     runs-on: ubuntu-latest
-    env:
-      DOTNET_INSTALL_DIR: ${{ runner.temp }}/dotnet-sdk
     steps:
       - uses: actions/checkout@v7
       - name: Install .NET 10.0.403
@@ -27,8 +25,10 @@ jobs:
         run: |
           set -euo pipefail
           dotnet --info
-          test -x "$DOTNET_INSTALL_DIR/dotnet"
-          tar -C "$DOTNET_INSTALL_DIR" -czf "$RUNNER_TEMP/dotnet-sdk-10.0.403-linux-x64.tar.gz" .
+          DOTNET_BIN="$(readlink -f "$(command -v dotnet)")"
+          DOTNET_ROOT="$(dirname "$DOTNET_BIN")"
+          test -x "$DOTNET_ROOT/dotnet"
+          tar -C "$DOTNET_ROOT" -czf "$RUNNER_TEMP/dotnet-sdk-10.0.403-linux-x64.tar.gz" .
           sha256sum "$RUNNER_TEMP/dotnet-sdk-10.0.403-linux-x64.tar.gz" > "$RUNNER_TEMP/dotnet-sdk-10.0.403-linux-x64.sha256"
       - name: Upload portable SDK artifact
         uses: actions/upload-artifact@v7
