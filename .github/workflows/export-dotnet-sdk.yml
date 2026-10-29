@@ -13,27 +13,29 @@ jobs:
   export-sdk:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - name: Install .NET 10.0.403
-        uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: '10.0.403'
-          architecture: x64
-          check-latest: false
-      - name: Verify and package SDK
+      - name: Install isolated .NET 10.0.403 SDK
         shell: bash
         run: |
           set -euo pipefail
-          dotnet --info
-          DOTNET_BIN="$(readlink -f "$(command -v dotnet)")"
-          DOTNET_ROOT="$(dirname "$DOTNET_BIN")"
-          test -x "$DOTNET_ROOT/dotnet"
-          tar -C "$DOTNET_ROOT" -czf "$RUNNER_TEMP/dotnet-sdk-10.0.403-linux-x64.tar.gz" .
+          mkdir -p "$RUNNER_TEMP/dotnet-portable"
+          curl -fsSL https://dot.net/v1/dotnet-install.sh -o "$RUNNER_TEMP/dotnet-install.sh"
+          bash "$RUNNER_TEMP/dotnet-install.sh" \
+            --version 10.0.403 \
+            --architecture x64 \
+            --install-dir "$RUNNER_TEMP/dotnet-portable" \
+            --no-path
+          "$RUNNER_TEMP/dotnet-portable/dotnet" --info
+      - name: Package isolated SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -C "$RUNNER_TEMP/dotnet-portable" -czf "$RUNNER_TEMP/dotnet-sdk-10.0.403-linux-x64.tar.gz" .
           sha256sum "$RUNNER_TEMP/dotnet-sdk-10.0.403-linux-x64.tar.gz" > "$RUNNER_TEMP/dotnet-sdk-10.0.403-linux-x64.sha256"
+          du -h "$RUNNER_TEMP/dotnet-sdk-10.0.403-linux-x64.tar.gz"
       - name: Upload portable SDK artifact
         uses: actions/upload-artifact@v7
         with:
-          name: dotnet-sdk-10.0.403-linux-x64
+          name: dotnet-sdk-10.0.403-linux-x64-isolated
           path: |
             ${{ runner.temp }}/dotnet-sdk-10.0.403-linux-x64.tar.gz
             ${{ runner.temp }}/dotnet-sdk-10.0.403-linux-x64.sha256
