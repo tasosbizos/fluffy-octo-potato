@@ -1,0 +1,42 @@
+name: Export portable .NET 10 SDK
+
+on:
+  push:
+    paths:
+      - '.github/workflows/export-dotnet-sdk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_INSTALL_DIR: ${{ runner.temp }}/dotnet-sdk
+
+jobs:
+  export-sdk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install .NET 10.0.403
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.403'
+          architecture: x64
+          check-latest: false
+      - name: Verify and package SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet --info
+          test -x "$DOTNET_INSTALL_DIR/dotnet"
+          tar -C "$DOTNET_INSTALL_DIR" -czf "$RUNNER_TEMP/dotnet-sdk-10.0.403-linux-x64.tar.gz" .
+          sha256sum "$RUNNER_TEMP/dotnet-sdk-10.0.403-linux-x64.tar.gz" > "$RUNNER_TEMP/dotnet-sdk-10.0.403-linux-x64.sha256"
+      - name: Upload portable SDK artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: dotnet-sdk-10.0.403-linux-x64
+          path: |
+            ${{ runner.temp }}/dotnet-sdk-10.0.403-linux-x64.tar.gz
+            ${{ runner.temp }}/dotnet-sdk-10.0.403-linux-x64.sha256
+          compression-level: 0
+          retention-days: 1
