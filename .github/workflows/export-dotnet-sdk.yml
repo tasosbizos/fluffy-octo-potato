@@ -9,12 +9,11 @@ on:
 permissions:
   contents: read
 
-env:
-  DOTNET_INSTALL_DIR: ${{ runner.temp }}/dotnet-sdk
-
 jobs:
   export-sdk:
     runs-on: ubuntu-latest
+    env:
+      DOTNET_INSTALL_DIR: ${{ runner.temp }}/dotnet-sdk
     steps:
       - uses: actions/checkout@v7
       - name: Install .NET 10.0.403
